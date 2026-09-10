@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.29.2" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.11" />
@@ -15,6 +16,13 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="NotificationService/**/*.cs" />
+    <Content Remove="NotificationService/**/*" />
+    <EmbeddedResource Remove="NotificationService/**/*" />
+    <None Remove="NotificationService/**/*" />
   </ItemGroup>
 
 </Project>

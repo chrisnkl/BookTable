@@ -1,46 +1,274 @@
 using BookTable.Database;
+using BookTable.Dtos;
 using BookTable.Entities;
+using BookTable.Patterns.CircuitBreaker.impl;
+using BookTable.Patterns.Retry;
 using Microsoft.EntityFrameworkCore;
 
-namespace BookTable.Services
+namespace BookTable.Services.impl
 {
     public class BookService : IBookService
     {
-
         private readonly DatabaseContext _context;
-        public BookService(DatabaseContext context)
+        private readonly CircuitBreaker _circuitBreaker;
+        private readonly RetryPolicy _retryPolicy;
+        private readonly IStaticContentService _staticContentService;
+
+        public BookService(DatabaseContext context, IStaticContentService staticContentService)
         {
             _context = context;
+            _staticContentService = staticContentService;
+            _circuitBreaker = new CircuitBreaker();
+            _retryPolicy = new RetryPolicy(retryCount: 3, initialDelay: TimeSpan.FromMilliseconds(100));
         }
 
-        public async Task<List<Table>> GetAllReservations()
+        #region Table Operations
+
+        public async Task<List<TableResponse>> GetAllTablesAsync()
         {
-            return await _context.Tables.ToListAsync();
+            List<Table> tables = new();
+
+            await _retryPolicy.ExecuteAsync(async () =>
+            {
+                _circuitBreaker.ExecuteAction(() =>
+                {
+                    tables = _context.Tables
+                        .Include(t => t.Reservations)
+                        .ToList();
+                });
+                await Task.CompletedTask;
+            });
+
+            var result = new List<TableResponse>();
+            foreach (var t in tables)
+            {
+                result.Add(await MapTableResponseAsync(t));
+            }
+            return result;
         }
 
-        public async Task<Table?> GetById(int id)
+        public async Task<TableResponse?> GetTableByIdAsync(int id)
         {
-            return await _context.Tables.FindAsync(id);
+            Table? table = null;
+
+            await _retryPolicy.ExecuteAsync(async () =>
+            {
+                _circuitBreaker.ExecuteAction(() =>
+                {
+                    table = _context.Tables
+                        .Include(t => t.Reservations)
+                        .FirstOrDefault(t => t.Id == id);
+                });
+                await Task.CompletedTask;
+            });
+
+            return table == null ? null : await MapTableResponseAsync(table);
         }
 
-        public async Task<Table> Create(Table table)
+        public async Task<TableResponse> CreateTableAsync(CreateTableRequest request)
         {
-            _context.Tables.Add(table);
-            await _context.SaveChangesAsync();
+            ArgumentNullException.ThrowIfNull(request);
 
-            return table;
+            if (request.Number <= 0)
+                throw new ArgumentException("Table number must be positive.", nameof(request.Number));
+
+            if (request.Capacity <= 0)
+                throw new ArgumentException("Table capacity must be positive.", nameof(request.Capacity));
+
+            var table = new Table
+            {
+                Number = request.Number,
+                Capacity = request.Capacity,
+                BlobName = request.BlobName
+            };
+
+            await _retryPolicy.ExecuteAsync(async () =>
+            {
+                _circuitBreaker.ExecuteAction(() =>
+                {
+                    _context.Tables.Add(table);
+                    _context.SaveChanges();
+                });
+                await Task.CompletedTask;
+            });
+
+            return await MapTableResponseAsync(table);
         }
 
-        public async Task<bool> Delete(int id)
+        public async Task<bool> DeleteTableAsync(int id)
         {
-            var table = await _context.Tables.FindAsync(id);
+            bool deleted = false;
 
-            if (table == null) return false;
+            await _retryPolicy.ExecuteAsync(async () =>
+            {
+                _circuitBreaker.ExecuteAction(() =>
+                {
+                    var table = _context.Tables
+                        .Include(t => t.Reservations)
+                        .FirstOrDefault(t => t.Id == id);
 
-            _context.Tables.Remove(table);
-            await _context.SaveChangesAsync();
-            return true;
+                    if (table != null)
+                    {
+                        _context.Tables.Remove(table);
+                        _context.SaveChanges();
+                        deleted = true;
+                    }
+                });
+                await Task.CompletedTask;
+            });
+
+            return deleted;
         }
 
+        #endregion
+
+        #region Reservation Operations
+
+        public async Task<List<ReservationResponse>> GetAllReservationsAsync()
+        {
+            List<Reservation> reservations = new();
+
+            await _retryPolicy.ExecuteAsync(async () =>
+            {
+                _circuitBreaker.ExecuteAction(() =>
+                {
+                    reservations = _context.Reservations
+                        .Include(r => r.Table)
+                        .ToList();
+                });
+                await Task.CompletedTask;
+            });
+
+            return reservations.Select(MapReservationResponse).ToList();
+        }
+
+        public async Task<ReservationResponse?> GetReservationByIdAsync(int id)
+        {
+            Reservation? reservation = null;
+
+            await _retryPolicy.ExecuteAsync(async () =>
+            {
+                _circuitBreaker.ExecuteAction(() =>
+                {
+                    reservation = _context.Reservations
+                        .Include(r => r.Table)
+                        .FirstOrDefault(r => r.Id == id);
+                });
+                await Task.CompletedTask;
+            });
+
+            return reservation == null ? null : MapReservationResponse(reservation);
+        }
+
+        public async Task<ReservationResponse> BookTableAsync(CreateReservationRequest request)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            if (request.StartTime >= request.EndTime)
+                throw new ArgumentException("StartTime must be before EndTime.");
+
+            Reservation reservation = null!;
+
+            await _retryPolicy.ExecuteAsync(async () =>
+            {
+                _circuitBreaker.ExecuteAction(() =>
+                {
+                    var table = _context.Tables
+                        .Include(t => t.Reservations)
+                        .FirstOrDefault(t => t.Id == request.TableId);
+
+                    if (table == null)
+                        throw new KeyNotFoundException($"Table with ID {request.TableId} not found.");
+
+                    bool hasOverlap = table.Reservations.Any(r =>
+                        r.StartTime < request.EndTime && r.EndTime > request.StartTime);
+
+                    if (hasOverlap)
+                        throw new InvalidOperationException("Table is already reserved for the selected time interval.");
+
+                    reservation = new Reservation
+                    {
+                        TableId = request.TableId,
+                        StartTime = request.StartTime,
+                        EndTime = request.EndTime,
+                        Table = table
+                    };
+
+                    _context.Reservations.Add(reservation);
+                    _context.SaveChanges();
+                });
+                await Task.CompletedTask;
+            });
+
+            return MapReservationResponse(reservation);
+        }
+
+        public async Task<bool> CancelReservationAsync(int id)
+        {
+            bool cancelled = false;
+
+            await _retryPolicy.ExecuteAsync(async () =>
+            {
+                _circuitBreaker.ExecuteAction(() =>
+                {
+                    var reservation = _context.Reservations.Find(id);
+                    if (reservation != null)
+                    {
+                        _context.Reservations.Remove(reservation);
+                        _context.SaveChanges();
+                        cancelled = true;
+                    }
+                });
+                await Task.CompletedTask;
+            });
+
+            return cancelled;
+        }
+
+        public async Task<ReservationsAndTablesResponse> GetReservationsAndTablesAsync()
+        {
+            var tables = await GetAllTablesAsync();
+            var reservations = await GetAllReservationsAsync();
+            return new ReservationsAndTablesResponse(tables, reservations);
+        }
+
+        #endregion
+
+        #region Mapping
+
+        /// <summary>
+        /// Maps a Table entity to TableResponse, resolving the floor plan blob URL
+        /// from Azure Blob Storage (Static Content Hosting Pattern).
+        /// </summary>
+        private async Task<TableResponse> MapTableResponseAsync(Table table)
+        {
+            string? blobUrl = null;
+            if (!string.IsNullOrEmpty(table.BlobName))
+            {
+                blobUrl = await _staticContentService.GetBlobUrlAsync(table.BlobName);
+            }
+
+            return new TableResponse(
+                table.Id,
+                table.Number,
+                table.Capacity,
+                blobUrl,
+                table.Reservations?.Select(MapReservationResponse).ToList() ?? new List<ReservationResponse>()
+            );
+        }
+
+        private static ReservationResponse MapReservationResponse(Reservation r)
+        {
+            return new ReservationResponse(
+                r.Id,
+                r.TableId,
+                r.Table?.Number ?? 0,
+                r.Table?.Capacity ?? 0,
+                r.StartTime,
+                r.EndTime
+            );
+        }
+
+        #endregion
     }
 }

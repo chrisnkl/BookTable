@@ -4,7 +4,7 @@ namespace BookTable.Patterns.CircuitBreaker
     {
 
         CircuitBreakerStateEnum State { get; }
-        Exception LastException { get; }
+        Exception? LastException { get; }
         DateTime LastStateChangedDateUtc { get; }
         void Trip(Exception e);
         void Reset();

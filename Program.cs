@@ -1,30 +1,55 @@
+using BookTable.Clients;
 using BookTable.Database;
+using BookTable.Services;
+using BookTable.Services.impl;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddDbContext<DatabaseContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
+builder.Services.AddHttpClient<NotificationClient>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5172");
+});
+
+builder.Services.AddScoped<IBookService, BookService>();
+
+builder.Services.AddSingleton<IStaticContentService>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var connectionString = config["AzureStorage:ConnectionString"] ?? "UseDevelopmentStorage=true";
+    var containerName = config["AzureStorage:ContainerName"] ?? "static-content";
+    return new StaticContentService(connectionString, containerName);
+});
 
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var staticContent = scope.ServiceProvider.GetRequiredService<IStaticContentService>();
+        await staticContent.InitializeContainerAsync();
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogWarning(ex, "Could not initialise Azure Storage container. Azurite may not be running.");
+    }
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();

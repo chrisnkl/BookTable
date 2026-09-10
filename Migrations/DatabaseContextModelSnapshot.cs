@@ -54,6 +54,9 @@ namespace BookTable.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("BlobName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Capacity")
                         .HasColumnType("int");
 

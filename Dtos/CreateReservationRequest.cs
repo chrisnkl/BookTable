@@ -1,6 +1,8 @@
-﻿namespace BookTable.Dtos
+namespace BookTable.Dtos
 {
-    public record CreateReservationRequest
-    {
-    }
+    public record CreateReservationRequest(
+        int TableId,
+        DateTime StartTime,
+        DateTime EndTime
+    );
 }

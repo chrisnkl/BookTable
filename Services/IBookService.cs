@@ -1,13 +1,22 @@
-using BookTable.Entities;
+using BookTable.Dtos;
 
 namespace BookTable.Services
 {
     public interface IBookService
     {
-        Task<List<Reservation>> GetAllReservations();
-        Task<Reservation?> GetById(int id);
-        Task<Reservation> Create(Reservation reservation);
-        Task<bool> Delete(int id);
-        Task<ReservationResponse> BookTable(CreateReservationRequest request);
+        // Table Operations
+        Task<List<TableResponse>> GetAllTablesAsync();
+        Task<TableResponse?> GetTableByIdAsync(int id);
+        Task<TableResponse> CreateTableAsync(CreateTableRequest request);
+        Task<bool> DeleteTableAsync(int id);
+
+        // Reservation Operations
+        Task<List<ReservationResponse>> GetAllReservationsAsync();
+        Task<ReservationResponse?> GetReservationByIdAsync(int id);
+        Task<ReservationResponse> BookTableAsync(CreateReservationRequest request);
+        Task<bool> CancelReservationAsync(int id);
+
+        // Combined Overview
+        Task<ReservationsAndTablesResponse> GetReservationsAndTablesAsync();
     }
 }
