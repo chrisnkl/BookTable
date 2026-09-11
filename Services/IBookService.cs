@@ -1,4 +1,5 @@
 using BookTable.Dtos;
+using Microsoft.AspNetCore.Http;
 
 namespace BookTable.Services
 {
@@ -8,6 +9,7 @@ namespace BookTable.Services
         Task<List<TableResponse>> GetAllTablesAsync();
         Task<TableResponse?> GetTableByIdAsync(int id);
         Task<TableResponse> CreateTableAsync(CreateTableRequest request);
+        Task<TableResponse?> UploadTableImageAsync(int id, IFormFile file);
         Task<bool> DeleteTableAsync(int id);
 
         // Reservation Operations
@@ -16,7 +18,7 @@ namespace BookTable.Services
         Task<ReservationResponse> BookTableAsync(CreateReservationRequest request);
         Task<bool> CancelReservationAsync(int id);
 
-        // Combined Overview
+        // Combined Overviewq
         Task<ReservationsAndTablesResponse> GetReservationsAndTablesAsync();
     }
 }

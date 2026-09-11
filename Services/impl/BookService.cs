@@ -3,6 +3,7 @@ using BookTable.Dtos;
 using BookTable.Entities;
 using BookTable.Patterns.CircuitBreaker.impl;
 using BookTable.Patterns.Retry;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookTable.Services.impl
@@ -104,6 +105,43 @@ namespace BookTable.Services.impl
                 });
                 await Task.CompletedTask;
             });
+
+            return await MapTableResponseAsync(table);
+        }
+
+        public async Task<TableResponse?> UploadTableImageAsync(int id, IFormFile file)
+        {
+            if (file == null)
+                throw new ArgumentNullException(nameof(file));
+
+            if (file.Length == 0)
+                throw new ArgumentException("Uploaded file is empty.", nameof(file));
+
+            var table = await _context.Tables.FirstOrDefaultAsync(t => t.Id == id);
+            if (table == null)
+                return null;
+
+            var originalFileName = Path.GetFileNameWithoutExtension(file.FileName);
+            var extension = Path.GetExtension(file.FileName);
+            var safeOriginalName = string.IsNullOrWhiteSpace(originalFileName)
+                ? "table"
+                : new string(originalFileName.Where(ch => char.IsLetterOrDigit(ch) || ch == '-' || ch == '_').ToArray());
+
+            var blobName = $"{safeOriginalName}{Guid.NewGuid():N}{extension}";
+
+            using var stream = file.OpenReadStream();
+            await _staticContentService.UploadFileAsync(
+                blobName,
+                stream,
+                string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType);
+
+            if (!string.IsNullOrEmpty(table.BlobName) && table.BlobName != blobName)
+            {
+                await _staticContentService.DeleteBlobAsync(table.BlobName);
+            }
+
+            table.BlobName = blobName;
+            await _context.SaveChangesAsync();
 
             return await MapTableResponseAsync(table);
         }

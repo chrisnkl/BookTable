@@ -2,6 +2,7 @@ using BookTable.Clients;
 using BookTable.Dtos;
 using BookTable.Patterns.CircuitBreaker;
 using BookTable.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookTable.Controllers
@@ -55,7 +56,31 @@ namespace BookTable.Controllers
             }
         }
 
-        // 3) Delete table
+        // 3) Upload table image
+        [HttpPatch("{id:int}/blob")]
+        public async Task<ActionResult<TableResponse>> UploadTableImage(int id, [FromForm] IFormFile file)
+        {
+            try
+            {
+                var updatedTable = await _bookService.UploadTableImageAsync(id, file);
+                if (updatedTable == null)
+                {
+                    return NotFound(new { message = $"Table with ID {id} not found." });
+                }
+
+                return Ok(updatedTable);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (CircuitBreakerOpenException ex)
+            {
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Service temporarily unavailable (Circuit Breaker open).", details = ex.Message });
+            }
+        }
+
+        // 4) Delete table
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteTable(int id)
         {
@@ -75,7 +100,7 @@ namespace BookTable.Controllers
             }
         }
 
-        // 4) View table info
+        // 5) View table info
         [HttpGet("{id:int}")]
         public async Task<ActionResult<TableResponse>> GetTableById(int id)
         {
