@@ -5,9 +5,9 @@ namespace BookTable.Patterns.CircuitBreaker.impl
         // Return a singleton state store so the circuit breaker state is shared across
         // service instances and requests. Previously this returned a new instance on
         // every call which prevented the circuit from ever staying open.
-        private static readonly ICircuitBreaker sharedInstance = new InMemoryCircuitBreakerStateStore();
+        private static readonly ICircuitBreakerStateStore sharedInstance = new InMemoryCircuitBreakerStateStoreStateStoreStore();
 
-        public static ICircuitBreaker GetCircuitBreakerStateStore()
+        public static ICircuitBreakerStateStore GetCircuitBreakerStateStore()
         {
             return sharedInstance;
         }

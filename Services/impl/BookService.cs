@@ -13,7 +13,7 @@ namespace BookTable.Services.impl
         private readonly CircuitBreaker _circuitBreaker;
         private readonly RetryPolicy _retryPolicy;
         private readonly IStaticContentService _staticContentService;
-
+        private int attempts;
         public BookService(DatabaseContext context, IStaticContentService staticContentService)
         {
             _context = context;
@@ -30,20 +30,33 @@ namespace BookTable.Services.impl
 
             await _retryPolicy.ExecuteAsync(async () =>
             {
+                attempts++;
+
+                Console.WriteLine($"Current attempt: #{attempts}");
+
+                // Transient failure to simulate retry policy
+                if (attempts < _retryPolicy.retryCount)
+                {
+                    throw new TimeoutException("Simulated transient failure for RetryPolicy");
+                }
+
                 _circuitBreaker.ExecuteAction(() =>
                 {
                     tables = _context.Tables
                         .Include(t => t.Reservations)
                         .ToList();
                 });
+
                 await Task.CompletedTask;
             });
 
             var result = new List<TableResponse>();
+
             foreach (var t in tables)
             {
                 result.Add(await MapTableResponseAsync(t));
             }
+
             return result;
         }
 

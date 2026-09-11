@@ -3,7 +3,7 @@ namespace BookTable.Patterns.CircuitBreaker.impl
     public class CircuitBreaker
     {
 
-        private readonly ICircuitBreaker stateStore = CircuitBreakerStateStoreFactory.GetCircuitBreakerStateStore();
+        private readonly ICircuitBreakerStateStore stateStore = CircuitBreakerStateStoreFactory.GetCircuitBreakerStateStore();
         private readonly object halfOpenSyncObject = new object();
         private readonly TimeSpan OpenToHalfOpenWaitTime = new TimeSpan(0, 0, 60);
 

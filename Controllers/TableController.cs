@@ -1,3 +1,4 @@
+using BookTable.Clients;
 using BookTable.Dtos;
 using BookTable.Patterns.CircuitBreaker;
 using BookTable.Services;
@@ -10,10 +11,12 @@ namespace BookTable.Controllers
     public class TableController : ControllerBase
     {
         private readonly IBookService _bookService;
+        private readonly NotificationClient _notificationClient;
 
-        public TableController(IBookService bookService)
+        public TableController(IBookService bookService, NotificationClient notificationClient)
         {
             _bookService = bookService;
+            _notificationClient = notificationClient;
         }
 
         // 1) Get all tables
@@ -22,6 +25,8 @@ namespace BookTable.Controllers
         {
             try
             {
+                await _notificationClient.SendNotificationAsync();
+                
                 var tables = await _bookService.GetAllTablesAsync();
                 return Ok(tables);
             }

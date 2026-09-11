@@ -1,6 +1,6 @@
 namespace BookTable.Patterns.CircuitBreaker
 {
-    public interface ICircuitBreaker
+    public interface ICircuitBreakerStateStore
     {
 
         CircuitBreakerStateEnum State { get; }

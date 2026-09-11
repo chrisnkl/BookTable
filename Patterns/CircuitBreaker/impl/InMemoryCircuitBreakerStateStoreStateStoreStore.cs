@@ -1,6 +1,6 @@
 namespace BookTable.Patterns.CircuitBreaker.impl
 {
-    public class InMemoryCircuitBreakerStateStore : ICircuitBreaker
+    public class InMemoryCircuitBreakerStateStoreStateStoreStore : ICircuitBreakerStateStore
     {
         public CircuitBreakerStateEnum State { get; private set; } = CircuitBreakerStateEnum.Closed;
         public Exception? LastException { get; private set; }

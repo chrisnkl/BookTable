@@ -1,12 +1,13 @@
 using System.Diagnostics;
 using System.Net;
 using BookTable.Patterns.CircuitBreaker;
+using Microsoft.Data.SqlClient;
 
 namespace BookTable.Patterns.Retry
 {
     public class RetryPolicy
     {
-        private readonly int retryCount;
+        public readonly int retryCount;
         private readonly TimeSpan initialDelay;
         private readonly bool useExponentialBackoff;
 
