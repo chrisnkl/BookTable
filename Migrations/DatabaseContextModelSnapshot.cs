@@ -60,9 +60,6 @@ namespace BookTable.Migrations
                     b.Property<int>("Capacity")
                         .HasColumnType("int");
 
-                    b.Property<int>("Number")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.ToTable("Tables");

@@ -18,7 +18,7 @@ namespace BookTable.Services
         Task<ReservationResponse> BookTableAsync(CreateReservationRequest request);
         Task<bool> CancelReservationAsync(int id);
 
-        // Combined Overviewq
+        // Combined Overview
         Task<ReservationsAndTablesResponse> GetReservationsAndTablesAsync();
     }
 }

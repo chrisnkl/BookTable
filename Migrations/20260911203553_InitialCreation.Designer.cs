@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BookTable.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20260910171744_InitialCreation")]
+    [Migration("20260911203553_InitialCreation")]
     partial class InitialCreation
     {
         /// <inheritdoc />
@@ -61,9 +61,6 @@ namespace BookTable.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Capacity")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Number")
                         .HasColumnType("int");
 
                     b.HasKey("Id");

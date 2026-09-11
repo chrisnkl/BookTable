@@ -82,16 +82,12 @@ namespace BookTable.Services.impl
         public async Task<TableResponse> CreateTableAsync(CreateTableRequest request)
         {
             ArgumentNullException.ThrowIfNull(request);
-
-            if (request.Number <= 0)
-                throw new ArgumentException("Table number must be positive.", nameof(request.Number));
-
+            
             if (request.Capacity <= 0)
                 throw new ArgumentException("Table capacity must be positive.", nameof(request.Capacity));
 
             var table = new Table
             {
-                Number = request.Number,
                 Capacity = request.Capacity,
                 BlobName = request.BlobName
             };
@@ -111,15 +107,12 @@ namespace BookTable.Services.impl
 
         public async Task<TableResponse?> UploadTableImageAsync(int id, IFormFile file)
         {
-            if (file == null)
-                throw new ArgumentNullException(nameof(file));
+            if (file == null) throw new ArgumentNullException(nameof(file));
 
-            if (file.Length == 0)
-                throw new ArgumentException("Uploaded file is empty.", nameof(file));
+            if (file.Length == 0) throw new ArgumentException("Uploaded file is empty.", nameof(file));
 
             var table = await _context.Tables.FirstOrDefaultAsync(t => t.Id == id);
-            if (table == null)
-                return null;
+            if (table == null) return null;
 
             var originalFileName = Path.GetFileNameWithoutExtension(file.FileName);
             var extension = Path.GetExtension(file.FileName);
@@ -184,7 +177,6 @@ namespace BookTable.Services.impl
                 _circuitBreaker.ExecuteAction(() =>
                 {
                     reservations = _context.Reservations
-                        .Include(r => r.Table)
                         .ToList();
                 });
                 await Task.CompletedTask;
@@ -202,7 +194,6 @@ namespace BookTable.Services.impl
                 _circuitBreaker.ExecuteAction(() =>
                 {
                     reservation = _context.Reservations
-                        .Include(r => r.Table)
                         .FirstOrDefault(r => r.Id == id);
                 });
                 await Task.CompletedTask;
@@ -301,7 +292,6 @@ namespace BookTable.Services.impl
 
             return new TableResponse(
                 table.Id,
-                table.Number,
                 table.Capacity,
                 blobUrl,
                 table.Reservations?.Select(MapReservationResponse).ToList() ?? new List<ReservationResponse>()
@@ -313,7 +303,6 @@ namespace BookTable.Services.impl
             return new ReservationResponse(
                 r.Id,
                 r.TableId,
-                r.Table?.Number ?? 0,
                 r.Table?.Capacity ?? 0,
                 r.StartTime,
                 r.EndTime

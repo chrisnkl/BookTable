@@ -15,6 +15,18 @@ builder.Services.AddHttpClient<NotificationClient>(client =>
     client.BaseAddress = new Uri("http://localhost:5172");
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+        policy
+            .WithOrigins(
+                "http://localhost:5174",
+                "http://127.0.0.1:5174"
+                )
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
+
 builder.Services.AddScoped<IBookService, BookService>();
 
 builder.Services.AddSingleton<IStaticContentService>(sp =>
@@ -50,6 +62,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("Frontend");
 app.UseAuthorization();
 app.MapControllers();
+
 app.Run();
