@@ -363,4 +363,5 @@ MigrationBackup/
 FodyWeavers.xsd
 
 __azurite_**
+AzuriteConfig
 .idea
