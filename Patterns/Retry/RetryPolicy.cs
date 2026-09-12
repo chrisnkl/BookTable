@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Net;
-using BookTable.Patterns.CircuitBreaker;
-using Microsoft.Data.SqlClient;
+using BookTable.Patterns.CircuitBreaker.Exceptions;
 
 namespace BookTable.Patterns.Retry
 {
@@ -133,9 +132,8 @@ namespace BookTable.Patterns.Retry
 
         public bool IsTransient(Exception ex)
         {
-            // As detailed in the Microsoft Cloud Design Patterns book:
             // The retry logic should be sensitive to any exceptions returned by the circuit breaker
-            // and abandon retry attempts if the circuit breaker indicates that a fault is not transient.
+            // and dont retry in case the circuit breaker indicates that a fault is not transient.
             if (ex is CircuitBreakerOpenException)
             {
                 return false;

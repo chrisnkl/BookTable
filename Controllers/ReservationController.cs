@@ -1,6 +1,6 @@
 using BookTable.Clients;
 using BookTable.Dtos;
-using BookTable.Patterns.CircuitBreaker;
+using BookTable.Patterns.CircuitBreaker.Exceptions;
 using BookTable.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,7 +19,7 @@ namespace BookTable.Controllers
             _notificationClient = notificationClient;
         }
 
-        // 1) Get all reservations and tables (Overview)
+        // Get all reservations and tables (Overview)
         [HttpGet]
         public async Task<ActionResult<ReservationsAndTablesResponse>> GetReservationsAndTables()
         {
@@ -34,7 +34,7 @@ namespace BookTable.Controllers
             }
         }
 
-        // 2) Reserve a table
+        // Reserve a table
         [HttpPost]
         public async Task<ActionResult<ReservationResponse>> ReserveTable([FromBody] CreateReservationRequest request)
         {
@@ -64,7 +64,7 @@ namespace BookTable.Controllers
             }
         }
 
-        // 3) Cancel a reservation
+        // Cancel a reservation
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> CancelReservation(int id)
         {
@@ -85,7 +85,7 @@ namespace BookTable.Controllers
             }
         }
 
-        // 4) View reservation info
+        // View reservation info
         [HttpGet("{id:int}")]
         public async Task<ActionResult<ReservationResponse>> GetReservationById(int id)
         {

@@ -1,4 +1,4 @@
-namespace BookTable.Patterns.CircuitBreaker
+namespace BookTable.Patterns.CircuitBreaker.Exceptions
 {
     public class CircuitBreakerOpenException : Exception
     {

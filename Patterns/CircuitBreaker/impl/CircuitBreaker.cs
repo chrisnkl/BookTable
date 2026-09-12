@@ -1,3 +1,5 @@
+using BookTable.Patterns.CircuitBreaker.Exceptions;
+
 namespace BookTable.Patterns.CircuitBreaker.impl
 {
     public class CircuitBreaker

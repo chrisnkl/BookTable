@@ -3,7 +3,6 @@ using BookTable.Dtos;
 using BookTable.Entities;
 using BookTable.Patterns.CircuitBreaker.impl;
 using BookTable.Patterns.Retry;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookTable.Services.impl
@@ -277,11 +276,7 @@ namespace BookTable.Services.impl
         #endregion
 
         #region Mapping
-
-        /// <summary>
-        /// Maps a Table entity to TableResponse, resolving the floor plan blob URL
-        /// from Azure Blob Storage (Static Content Hosting Pattern).
-        /// </summary>
+        
         private async Task<TableResponse> MapTableResponseAsync(Table table)
         {
             string? blobUrl = null;

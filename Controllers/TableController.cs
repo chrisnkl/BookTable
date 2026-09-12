@@ -1,6 +1,6 @@
 using BookTable.Clients;
 using BookTable.Dtos;
-using BookTable.Patterns.CircuitBreaker;
+using BookTable.Patterns.CircuitBreaker.Exceptions;
 using BookTable.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +20,7 @@ namespace BookTable.Controllers
             _notificationClient = notificationClient;
         }
 
-        // 1) Get all tables
+        // Get all tables
         [HttpGet]
         public async Task<ActionResult<List<TableResponse>>> GetAllTables()
         {
@@ -37,7 +37,7 @@ namespace BookTable.Controllers
             }
         }
 
-        // 2) Create table
+        // Create table
         [HttpPost]
         public async Task<ActionResult<TableResponse>> CreateTable([FromBody] CreateTableRequest request)
         {
@@ -56,7 +56,7 @@ namespace BookTable.Controllers
             }
         }
 
-        // 3) Upload table image
+        // Upload table image
         [HttpPatch("{id:int}/blob")]
         public async Task<ActionResult<TableResponse>> UploadTableImage(int id, [FromForm] IFormFile file)
         {
@@ -80,7 +80,7 @@ namespace BookTable.Controllers
             }
         }
 
-        // 4) Delete table
+        // Delete table
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteTable(int id)
         {
@@ -100,7 +100,7 @@ namespace BookTable.Controllers
             }
         }
 
-        // 5) View table info
+        // View table info
         [HttpGet("{id:int}")]
         public async Task<ActionResult<TableResponse>> GetTableById(int id)
         {
