@@ -231,8 +231,8 @@ namespace BookTable.Services.impl
                     reservation = new Reservation
                     {
                         TableId = request.TableId,
-                        StartTime = request.StartTime,
-                        EndTime = request.EndTime,
+                        StartTime = DateTime.SpecifyKind(reservation.StartTime, DateTimeKind.Utc),
+                        EndTime = DateTime.SpecifyKind(reservation.EndTime, DateTimeKind.Utc),
                         Table = table
                     };
 
