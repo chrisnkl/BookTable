@@ -15,7 +15,7 @@ public class NotificationController : ControllerBase
     {
         _attempts++;
         
-        if (_attempts == 10) _attempts = 0;
+        if (_attempts == 8) _attempts = 0;
         
         if (_attempts >= 5)
         {
