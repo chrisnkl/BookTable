@@ -1,5 +1,8 @@
 # BookTable
 
+### Το frontend είναι ο φάκελος booktable-frontend
+### Το backend είναι ο φάκελος BookTable
+
 Για να τρέξει σωστά η εφαρμογή, είναι απαραίτηση η χρήση SQL Server και Azurite.
 Για να τρέξει το frontend είναι αναγκαίο το Node.
 
