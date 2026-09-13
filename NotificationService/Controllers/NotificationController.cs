@@ -15,10 +15,9 @@ public class NotificationController : ControllerBase
     {
         _attempts++;
         
-        if (_attempts == 8) _attempts = 0;
-        
-        if (_attempts >= 5)
+        if (_attempts >= 20)
         {
+            _attempts = 0;
             return StatusCode(503, new
             {
                 message = "Notification service temporarily unavailable."
