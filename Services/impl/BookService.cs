@@ -13,6 +13,8 @@ namespace BookTable.Services.impl
         private readonly DatabaseContext _context;
         private readonly CircuitBreaker _circuitBreaker;
         private readonly RetryPolicy _retryPolicy;
+        private readonly CircuitBreaker _storageCircuitBreaker;
+        private readonly RetryPolicy _storageRetryPolicy;
         private readonly IStaticContentService _staticContentService;
         private readonly NotificationClient _notificationClient;
         private int attempts;
@@ -23,6 +25,8 @@ namespace BookTable.Services.impl
             _notificationClient = notificationClient;
             _circuitBreaker = new CircuitBreaker();
             _retryPolicy = new RetryPolicy(retryCount: 3, initialDelay: TimeSpan.FromMilliseconds(100));
+            _storageCircuitBreaker = new CircuitBreaker();
+            _storageRetryPolicy = new RetryPolicy(retryCount: 3, initialDelay: TimeSpan.FromMilliseconds(100));
         }
 
         #region Table Operations
@@ -125,21 +129,40 @@ namespace BookTable.Services.impl
 
             var originalFileName = Path.GetFileNameWithoutExtension(file.FileName);
             var extension = Path.GetExtension(file.FileName);
-            var safeOriginalName = string.IsNullOrWhiteSpace(originalFileName)
-                ? "table"
-                : new string(originalFileName.Where(ch => char.IsLetterOrDigit(ch) || ch == '-' || ch == '_').ToArray());
+            var safeOriginalName =
+                string.IsNullOrWhiteSpace(originalFileName)
+                    ? "table"
+                    : new string( originalFileName.Where(ch => char.IsLetterOrDigit(ch) || ch == '-' || ch == '_').ToArray());
 
             var blobName = $"{safeOriginalName}{Guid.NewGuid():N}{extension}";
 
             using var stream = file.OpenReadStream();
-            await _staticContentService.UploadFileAsync(
-                blobName,
-                stream,
-                string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType);
+
+            await _storageRetryPolicy.ExecuteAsync(async () =>
+            {
+                _storageCircuitBreaker.ExecuteAction(() =>
+                {
+                    _staticContentService
+                        .UploadFileAsync(
+                            blobName,
+                            stream,
+                            string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType).GetAwaiter().GetResult();
+                });
+
+                await Task.CompletedTask;
+            });
 
             if (!string.IsNullOrEmpty(table.BlobName) && table.BlobName != blobName)
             {
-                await _staticContentService.DeleteBlobAsync(table.BlobName);
+                await _storageRetryPolicy.ExecuteAsync(async () =>
+                {
+                    _storageCircuitBreaker.ExecuteAction(() =>
+                    {
+                        _staticContentService.DeleteBlobAsync(table.BlobName).GetAwaiter().GetResult();
+                    });
+
+                    await Task.CompletedTask;
+                });
             }
 
             table.BlobName = blobName;
