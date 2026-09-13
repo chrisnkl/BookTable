@@ -1,3 +1,4 @@
+using BookTable.Clients;
 using BookTable.Database;
 using BookTable.Dtos;
 using BookTable.Entities;
@@ -13,11 +14,13 @@ namespace BookTable.Services.impl
         private readonly CircuitBreaker _circuitBreaker;
         private readonly RetryPolicy _retryPolicy;
         private readonly IStaticContentService _staticContentService;
+        private readonly NotificationClient _notificationClient;
         private int attempts;
-        public BookService(DatabaseContext context, IStaticContentService staticContentService)
+        public BookService(DatabaseContext context, IStaticContentService staticContentService, NotificationClient notificationClient)
         {
             _context = context;
             _staticContentService = staticContentService;
+            _notificationClient = notificationClient;
             _circuitBreaker = new CircuitBreaker();
             _retryPolicy = new RetryPolicy(retryCount: 3, initialDelay: TimeSpan.FromMilliseconds(100));
         }
@@ -42,11 +45,15 @@ namespace BookTable.Services.impl
 
                 _circuitBreaker.ExecuteAction(() =>
                 {
-                    tables = _context.Tables
-                        .Include(t => t.Reservations)
-                        .ToList();
+                    _notificationClient.SendNotificationAsync()
+                        .GetAwaiter()
+                        .GetResult();
                 });
-
+                
+                tables = _context.Tables
+                    .Include(t => t.Reservations)
+                    .ToList();
+                
                 await Task.CompletedTask;
             });
 
@@ -68,10 +75,13 @@ namespace BookTable.Services.impl
             {
                 _circuitBreaker.ExecuteAction(() =>
                 {
-                    table = _context.Tables
-                        .Include(t => t.Reservations)
-                        .FirstOrDefault(t => t.Id == id);
+                    _notificationClient.SendNotificationAsync().GetAwaiter().GetResult();
                 });
+                
+                table = _context.Tables
+                    .Include(t => t.Reservations)
+                    .FirstOrDefault(t => t.Id == id);
+                
                 await Task.CompletedTask;
             });
 

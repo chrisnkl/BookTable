@@ -11,8 +11,11 @@ public class NotificationClient
 
     public async Task SendNotificationAsync()
     {
-        await _httpClient.PostAsync(
+        var response = await _httpClient.PostAsync(
             "/api/Notification/sendNotification",
             null);
+        
+        response.EnsureSuccessStatusCode();
+        
     }
 }

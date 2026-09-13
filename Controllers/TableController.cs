@@ -12,12 +12,10 @@ namespace BookTable.Controllers
     public class TableController : ControllerBase
     {
         private readonly IBookService _bookService;
-        private readonly NotificationClient _notificationClient;
 
-        public TableController(IBookService bookService, NotificationClient notificationClient)
+        public TableController(IBookService bookService)
         {
             _bookService = bookService;
-            _notificationClient = notificationClient;
         }
 
         // Get all tables
@@ -26,7 +24,6 @@ namespace BookTable.Controllers
         {
             try
             {
-                await _notificationClient.SendNotificationAsync();
                 
                 var tables = await _bookService.GetAllTablesAsync();
                 return Ok(tables);
