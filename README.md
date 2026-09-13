@@ -33,3 +33,11 @@
 <ul>
     <li>npm install -g azurite</li>
 </ul>
+
+Αν το azurite τρέξει σε άλλο location (θα φανεί στη κονσόλα), στο frontend υπαρχει .env αρχείο και βάζετε το runtime location στο env variable `VITE_BLOB_STORAGE_URL`
+
+Τα projects, αν χρειαστεί, υπάρχουν και αναρτημένα στο github εδώ:
+<ul>
+    <li>Frontend: https://github.com/chrisnkl/booktable-frontend</li>
+    <li>Backend: https://github.com/chrisnkl/BookTable</li>
+</ul>
